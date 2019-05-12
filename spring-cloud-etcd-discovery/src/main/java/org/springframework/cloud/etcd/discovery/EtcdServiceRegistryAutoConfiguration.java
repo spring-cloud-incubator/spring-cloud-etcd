@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,42 +16,39 @@
 
 package org.springframework.cloud.etcd.discovery;
 
-import mousio.etcd4j.EtcdClient;
-
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
-import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.etcd.discovery.EtcdDiscoveryProperties;
+import org.springframework.cloud.etcd.discovery.HeartbeatScheduler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.scheduling.annotation.EnableScheduling;
+
+import mousio.etcd4j.EtcdClient;
 
 /**
- * @author Spencer Gibb
  * @author Venil Noronha
  */
 @Configuration
-@ConditionalOnProperty(value = "spring.cloud.etcd.discovery.enabled", matchIfMissing = true)
-@EnableScheduling
-@EnableConfigurationProperties
-public class EtcdDiscoveryClientConfiguration {
+@ConditionalOnProperty(value = "spring.cloud.service-registry.enabled", matchIfMissing = true)
+public class EtcdServiceRegistryAutoConfiguration {
 
-	@Autowired
-	private EtcdClient client;
-
+	@Bean
 	@ConditionalOnMissingBean
-	public HeartbeatScheduler heartbeatScheduler(EtcdDiscoveryProperties properties) {
-		return new HeartbeatScheduler(client, properties);
+	public EtcdServiceRegistry etcdServiceRegistry(EtcdClient etcdClient, EtcdDiscoveryProperties properties,
+			HeartbeatScheduler heartbeatScheduler) {
+		return new EtcdServiceRegistry(etcdClient, properties, heartbeatScheduler);
 	}
 
 	@Bean
 	@ConditionalOnMissingBean
-	public EtcdDiscoveryClient etcdDiscoveryClient(EtcdDiscoveryProperties properties, EtcdRegistration registration) {
-		return new EtcdDiscoveryClient(client, registration, properties);
+	public HeartbeatScheduler heartbeatScheduler(EtcdClient etcdClient, EtcdDiscoveryProperties properties) {
+		return new HeartbeatScheduler(etcdClient, properties);
 	}
 
 	@Bean
+	@ConditionalOnMissingBean
 	public EtcdDiscoveryProperties etcdDiscoveryProperties() {
 		return new EtcdDiscoveryProperties();
 	}
+
 }

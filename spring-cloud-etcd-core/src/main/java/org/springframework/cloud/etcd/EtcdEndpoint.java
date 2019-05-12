@@ -18,23 +18,24 @@ package org.springframework.cloud.etcd;
 
 import mousio.etcd4j.EtcdClient;
 
-import org.springframework.boot.actuate.endpoint.AbstractEndpoint;
+import org.springframework.boot.actuate.endpoint.annotation.Endpoint;
+import org.springframework.boot.actuate.endpoint.annotation.ReadOperation;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 /**
  * @author Spencer Gibb
  */
 @ConfigurationProperties(prefix = "endpoints.etcd", ignoreUnknownFields = false)
-public class EtcdEndpoint extends AbstractEndpoint<EtcdEndpoint.Data> {
+@Endpoint(id="etcd")
+public class EtcdEndpoint {
 
 	private EtcdClient etcd;
 
 	public EtcdEndpoint(EtcdClient etcd) {
-		super("etcd", false, true);
 		this.etcd = etcd;
 	}
 
-	@Override
+	@ReadOperation
 	public Data invoke() {
 		Data data = new Data();
 		data.setVersion(etcd.getVersion());

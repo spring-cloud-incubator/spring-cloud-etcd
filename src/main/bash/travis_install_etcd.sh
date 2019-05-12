@@ -3,7 +3,7 @@
 #!/usr/bin/env bash
 
 ETCD_URL="https://github.com/coreos/etcd/releases/download"
-ETCD_VER="v2.2.0"
+ETCD_VER="v3.3.1"
 ETCD_ARC="linux-amd64"
 
 # cleanup

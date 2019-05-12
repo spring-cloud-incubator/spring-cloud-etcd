@@ -17,6 +17,7 @@
 package org.springframework.cloud.etcd.discovery;
 
 import mousio.etcd4j.EtcdClient;
+import mousio.etcd4j.responses.EtcdAuthenticationException;
 import mousio.etcd4j.responses.EtcdException;
 import mousio.etcd4j.responses.EtcdKeysResponse;
 import org.springframework.beans.BeansException;
@@ -34,20 +35,21 @@ import java.util.concurrent.TimeoutException;
 
 /**
  * @author Spencer Gibb
+ * @author Venil Noronha
  */
 public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextAware {
 
 	private final EtcdClient etcd;
 
-	private final EtcdLifecycle lifecycle;
-
 	private final EtcdDiscoveryProperties properties;
+
+	private final EtcdRegistration registration;
 
 	private ApplicationContext context;
 
-	public EtcdDiscoveryClient(EtcdClient etcd, EtcdLifecycle lifecycle, EtcdDiscoveryProperties properties) {
+	public EtcdDiscoveryClient(EtcdClient etcd, EtcdRegistration registration, EtcdDiscoveryProperties properties) {
 		this.etcd = etcd;
-		this.lifecycle = lifecycle;
+		this.registration = registration;
 		this.properties = properties;
 	}
 
@@ -57,26 +59,24 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 	}
 
 	@Override
-	public ServiceInstance getLocalServiceInstance() {
-		return new DefaultServiceInstance(lifecycle.getService().getAppName(),
-				properties.getHostname(), lifecycle.getConfiguredPort(), false);
-	}
-
-	@Override
 	public List<ServiceInstance> getInstances(final String serviceId) {
 		List<ServiceInstance> instances = null;
 		try {
-			EtcdKeysResponse response = etcd.getDir(lifecycle.getAppKey(serviceId)).send().get();
+			EtcdKeysResponse response = etcd.getDir(getAppKey(registration.getService().getAppName())).send().get();
 			List<EtcdKeysResponse.EtcdNode> nodes = response.node.nodes;
 			instances = new ArrayList<>();
 			for (EtcdKeysResponse.EtcdNode node : nodes) {
 				String[] parts = node.value.split(":");
 				instances.add(new DefaultServiceInstance(serviceId, parts[0], Integer.parseInt(parts[1]), false));
 			}
-		} catch (IOException | TimeoutException | EtcdException e) {
+		} catch (IOException | TimeoutException | EtcdException | EtcdAuthenticationException e) {
 			ReflectionUtils.rethrowRuntimeException(e);
 		}
 		return instances;
+	}
+
+	private String getAppKey(String appName) {
+		return properties.getDiscoveryPrefix() + "/" + appName;
 	}
 
 	@Override
@@ -91,7 +91,7 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 				serviceId = serviceId.substring(1);
 				services.add(serviceId);
 			}
-		} catch (IOException | EtcdException | TimeoutException e) {
+		} catch (IOException | EtcdException | TimeoutException | EtcdAuthenticationException e) {
 			ReflectionUtils.rethrowRuntimeException(e);
 		}
 		return services;
@@ -102,8 +102,8 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 		this.context = context;
 	}
 
-	public EtcdLifecycle getLifecycle() {
-		return lifecycle;
+	public EtcdRegistration  getRegistration() {
+		return registration;
 	}
 
 	public EtcdDiscoveryProperties getProperties() {
@@ -126,7 +126,7 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 		EtcdDiscoveryClient that = (EtcdDiscoveryClient) o;
 
 		if (etcd != null ? !etcd.equals(that.etcd) : that.etcd != null) return false;
-		if (lifecycle != null ? !lifecycle.equals(that.lifecycle) : that.lifecycle != null) return false;
+		if (registration != null ? !registration.equals(that.registration) : that.registration != null) return false;
 		if (properties != null ? !properties.equals(that.properties) : that.properties != null) return false;
 		return context != null ? context.equals(that.context) : that.context == null;
 	}
@@ -134,7 +134,7 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 	@Override
 	public int hashCode() {
 		int result = etcd != null ? etcd.hashCode() : 0;
-		result = 31 * result + (lifecycle != null ? lifecycle.hashCode() : 0);
+		result = 31 * result + (registration != null ? registration.hashCode() : 0);
 		result = 31 * result + (properties != null ? properties.hashCode() : 0);
 		result = 31 * result + (context != null ? context.hashCode() : 0);
 		return result;
@@ -142,6 +142,6 @@ public class EtcdDiscoveryClient implements DiscoveryClient, ApplicationContextA
 
 	@Override
 	public String toString() {
-		return String.format("EtcdDiscoveryClient{etcd=%s, lifecycle=%s, properties=%s, context=%s}", etcd, lifecycle, properties, context);
+		return String.format("EtcdDiscoveryClient{etcd=%s, registration=%s, properties=%s, context=%s}", etcd, registration, properties, context);
 	}
 }

@@ -19,6 +19,7 @@ package org.springframework.cloud.etcd.discovery;
 import com.netflix.client.config.IClientConfig;
 import com.netflix.loadbalancer.AbstractServerList;
 import mousio.etcd4j.EtcdClient;
+import mousio.etcd4j.responses.EtcdAuthenticationException;
 import mousio.etcd4j.responses.EtcdException;
 import mousio.etcd4j.responses.EtcdKeysResponse;
 import mousio.etcd4j.responses.EtcdKeysResponse.EtcdNode;
@@ -90,7 +91,7 @@ public class EtcdServerList extends AbstractServerList<EtcdServer> {
 				EtcdServer server = new EtcdServer(appInfo[0], appInfo[1], strings[0], strings[1]);
 				servers.add(server);
 			}
-		} catch (IOException | TimeoutException | EtcdException e) {
+		} catch (IOException | TimeoutException | EtcdException | EtcdAuthenticationException e) {
 			ReflectionUtils.rethrowRuntimeException(e);
 		}
 
