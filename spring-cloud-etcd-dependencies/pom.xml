@@ -18,7 +18,7 @@
 	</parent>
 
 	<properties>
-		<spring-cloud-commons.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-commons.version>
+		<spring-cloud-commons.version>1.2.0.BUILD-SNAPSHOT</spring-cloud-commons.version>
 		<spring-cloud-netflix.version>1.1.0.BUILD-SNAPSHOT</spring-cloud-netflix.version>
 		<archaius.version>0.7.1</archaius.version>
 		<etcd4j.version>2.7.0</etcd4j.version>

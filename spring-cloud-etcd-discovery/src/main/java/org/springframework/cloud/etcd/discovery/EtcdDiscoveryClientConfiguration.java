@@ -1,5 +1,5 @@
 /*
- * Copyright 2013-2015 the original author or authors.
+ * Copyright 2013-2017 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,15 +19,20 @@ package org.springframework.cloud.etcd.discovery;
 import mousio.etcd4j.EtcdClient;
 
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
+import org.springframework.cloud.etcd.serviceregistry.EtcdRegistration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.scheduling.annotation.EnableScheduling;
 
 /**
  * @author Spencer Gibb
+ * @author Venil Noronha
  */
 @Configuration
+@ConditionalOnProperty(value = "spring.cloud.etcd.discovery.enabled", matchIfMissing = true)
 @EnableScheduling
 @EnableConfigurationProperties
 public class EtcdDiscoveryClientConfiguration {
@@ -36,17 +41,20 @@ public class EtcdDiscoveryClientConfiguration {
 	private EtcdClient client;
 
 	@Bean
-	public EtcdLifecycle etcdLifecycle() {
-		return new EtcdLifecycle(client, etcdDiscoveryProperties());
-	}
-
-	@Bean
-	public EtcdDiscoveryClient etcdDiscoveryClient() {
-		return new EtcdDiscoveryClient(client, etcdLifecycle(), etcdDiscoveryProperties());
+	@ConditionalOnMissingBean
+	public HeartbeatScheduler heartbeatScheduler(EtcdDiscoveryProperties properties) {
+		return new HeartbeatScheduler(client, properties);
 	}
 
 	@Bean
 	public EtcdDiscoveryProperties etcdDiscoveryProperties() {
 		return new EtcdDiscoveryProperties();
 	}
+
+	@Bean
+	@ConditionalOnMissingBean
+	public EtcdDiscoveryClient etcdDiscoveryClient(EtcdDiscoveryProperties properties, EtcdRegistration registration) {
+		return new EtcdDiscoveryClient(client, properties, registration);
+	}
+
 }
